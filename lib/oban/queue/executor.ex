@@ -99,7 +99,7 @@ defmodule Oban.Queue.Executor do
 
   @spec resolve_worker(t()) :: t()
   def resolve_worker(%__MODULE__{} = exec) do
-    case Worker.from_string(exec.job.worker) do
+    case exec.conf.type_provider.from_string(exec.job.worker) do
       {:ok, worker} ->
         %{exec | worker: worker}
 

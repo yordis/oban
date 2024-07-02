@@ -26,7 +26,8 @@ defmodule Oban.Config do
           repo: module(),
           shutdown_grace_period: non_neg_integer(),
           stage_interval: timeout(),
-          testing: :disabled | :inline | :manual
+          testing: :disabled | :inline | :manual,
+          type_provider: module()
         }
 
   defstruct dispatch_cooldown: 5,
@@ -44,7 +45,8 @@ defmodule Oban.Config do
             repo: nil,
             shutdown_grace_period: :timer.seconds(15),
             stage_interval: :timer.seconds(1),
-            testing: :disabled
+            testing: :disabled,
+            type_provider: Oban.Worker
 
   @cron_keys ~w(crontab timezone)a
   @log_levels ~w(false emergency alert critical error warning warn notice info debug)a
@@ -145,7 +147,8 @@ defmodule Oban.Config do
       repo: {:module, [config: 0]},
       shutdown_grace_period: :non_neg_integer,
       stage_interval: :timeout,
-      testing: {:enum, @testing_modes}
+      testing: {:enum, @testing_modes},
+      type_provider: {:behaviour, Oban.TypeProvider}
     )
   end
 

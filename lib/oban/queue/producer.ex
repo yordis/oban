@@ -3,7 +3,7 @@ defmodule Oban.Queue.Producer do
 
   use GenServer
 
-  alias Oban.{Backoff, Engine, Notifier, PerformError, TimeoutError, Worker}
+  alias Oban.{Backoff, Engine, Notifier, PerformError, TimeoutError}
   alias Oban.Queue.Executor
   alias __MODULE__, as: State
 
@@ -79,7 +79,7 @@ defmodule Oban.Queue.Producer do
     # The worker module is resolved after storing the exec struct. We try to resolve it again in
     # order to get a worker's custom `backoff/1`.
     exec =
-      case Worker.from_string(exec.job.worker) do
+      case exec.conf.type_provider(exec.job.worker) do
         {:ok, worker} -> %{exec | worker: worker}
         {:error, _error} -> exec
       end

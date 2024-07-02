@@ -584,13 +584,13 @@ defmodule Oban.Testing do
   defp available_jobs(conf, opts) do
     query =
       []
-      |> base_query()
+      |> base_query(conf)
       |> select([j], map(j, ^Keyword.keys(opts)))
 
     Repo.all(conf, query)
   end
 
-  defp base_query(opts) do
+  defp base_query(opts, conf) do
     query =
       Job
       |> where([j], j.state in ["available", "scheduled"])
@@ -598,14 +598,16 @@ defmodule Oban.Testing do
 
     opts
     |> Keyword.drop(~w(args meta)a)
-    |> Enum.reduce(query, &conditions/2)
+    |> Enum.reduce(query, &conditions(&1, &2, conf))
   end
 
-  defp conditions({:queue, queue}, query), do: where(query, queue: ^to_string(queue))
-  defp conditions({:state, state}, query), do: where(query, state: ^to_string(state))
-  defp conditions({:worker, worker}, query), do: where(query, worker: ^Worker.to_string(worker))
+  defp conditions({:queue, queue}, query, _conf), do: where(query, queue: ^to_string(queue))
+  defp conditions({:state, state}, query, _conf), do: where(query, state: ^to_string(state))
 
-  defp conditions({key, val}, query) when key in @timestamp_fields do
+  defp conditions({:worker, worker}, query, conf),
+    do: where(query, worker: ^conf.type_provider.to_string(worker))
+
+  defp conditions({key, val}, query, _conf) when key in @timestamp_fields do
     {time, delta} =
       case val do
         {time, delta: delta} -> {time, delta}
@@ -620,7 +622,7 @@ defmodule Oban.Testing do
     where(query, [j], fragment("? BETWEEN ? AND ?", field(j, ^key), ^begin, ^until))
   end
 
-  defp conditions({key, value}, query), do: where(query, ^[{key, value}])
+  defp conditions({key, value}, query, _conf), do: where(query, ^[{key, value}])
 
   defp filter_jobs(conf, opts) do
     {json_opts, base_opts} = Keyword.split(opts, @json_fields)
@@ -628,7 +630,7 @@ defmodule Oban.Testing do
     json_opts = Keyword.new(json_opts, fn {key, val} -> {key, json_recode(val)} end)
 
     conf
-    |> Repo.all(base_query(base_opts))
+    |> Repo.all(base_query(base_opts, conf))
     |> Enum.filter(fn job -> Enum.all?(json_opts, &contains?(&1, job)) end)
   end
 
